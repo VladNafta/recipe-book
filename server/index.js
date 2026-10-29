@@ -1,29 +1,37 @@
-// Мінімальний сервер на вбудованому модулі http: віддає рецепти з PostgreSQL клієнту React
-import http from 'node:http';
-import { pool } from './db.js';
+// Бекенд записника рецептів на Express
+import express from 'express';
+import fs from 'node:fs';
+import YAML from 'yaml';
+import swaggerUi from 'swagger-ui-express';
+import recipesRouter from './routes/recipes.js';
 
+const app = express();
 const PORT = 4000;
 
-const server = http.createServer(async (req, res) => {
-  console.log(req.method, req.url);
+app.use(express.json()); // розбір JSON у тілі запиту
 
-  if (req.method === 'GET' && req.url === '/api/recipes') {
-    try {
-      const { rows } = await pool.query('SELECT * FROM recipes ORDER BY id');
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify(rows));
-    } catch (err) {
-      console.error(err.message);
-      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ error: 'Помилка бази даних' }));
-    }
-    return;
-  }
-
-  res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({ error: 'Не знайдено' }));
+// Журнал запитів у консоль
+app.use((req, res, next) => {
+  console.log(req.method, req.originalUrl);
+  next();
 });
 
-server.listen(PORT, () => {
-  console.log(`Сервер даних запущено: http://localhost:${PORT}/api/recipes`);
+app.use('/api/recipes', recipesRouter);
+
+// OpenAPI-специфікація і її інтерактивна документація
+const spec = YAML.parse(fs.readFileSync('./openapi.yaml', 'utf8'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
+
+// Невідомі адреси
+app.use((req, res) => res.status(404).json({ error: 'Не знайдено' }));
+
+// Помилки (зокрема помилки бази даних)
+app.use((err, req, res, next) => {
+  console.error(err.message);
+  res.status(500).json({ error: 'Помилка сервера' });
+});
+
+app.listen(PORT, () => {
+  console.log(`API: http://localhost:${PORT}/api/recipes`);
+  console.log(`Документація: http://localhost:${PORT}/api-docs`);
 });

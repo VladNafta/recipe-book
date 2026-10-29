@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: API записника рецептів
+  version: 1.0.0
+  description: REST API для отримання та збереження рецептів у PostgreSQL
+servers:
+  - url: http://localhost:4000/api
+paths:
+  /recipes:
+    get:
+      summary: Список рецептів
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema: { type: string, example: Салати }
+      responses:
+        '200':
+          description: Масив рецептів
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Recipe' }
+    post:
+      summary: Створити рецепт
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecipeInput' }
+      responses:
+        '201':
+          description: Створений рецепт
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Recipe' }
+  /recipes/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, example: 1 }
+    get:
+      summary: Рецепт за id
+      responses:
+        '200':
+          description: Рецепт
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Recipe' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      summary: Оновити рецепт
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecipeInput' }
+      responses:
+        '200':
+          description: Оновлений рецепт
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Recipe' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      summary: Видалити рецепт
+      responses:
+        '204': { description: Рецепт видалено }
+        '404': { $ref: '#/components/responses/NotFound' }
+components:
+  schemas:
+    RecipeInput:
+      type: object
+      required: [title, category, cook_time, servings, ingredients, steps]
+      properties:
+        title: { type: string, example: Млинці }
+        category: { type: string, example: Десерти }
+        cook_time: { type: integer, example: 30 }
+        servings: { type: integer, example: 4 }
+        ingredients:
+          type: array
+          items: { type: string }
+          example: [молоко, яйця, борошно, цукор]
+        steps: { type: string, example: Змішати інгредієнти й смажити млинці на сковороді. }
+    Recipe:
+      allOf:
+        - type: object
+          properties:
+            id: { type: integer, example: 9 }
+            created_at: { type: string, format: date-time }
+        - $ref: '#/components/schemas/RecipeInput'
+  responses:
+    NotFound:
+      description: Рецепт не знайдено
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: Рецепт не знайдено }
