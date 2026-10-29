@@ -10,6 +10,12 @@ cd server && npm install && cp .env.example .env && npm start   # API: http://lo
 cd client && npm install && npm run dev # клієнт: http://localhost:5173
 ```
 
+## Розгортання на Render
+
+У файлі `render.yaml` описано базу PostgreSQL і веб-сервіс. На render.com: New → Blueprint → вибрати репозиторій → Apply.
+Під час збирання будується клієнт React, сервер віддає його разом з API на одній адресі. Таблиці й початкові рецепти
+створюються з файлів `db/*.sql` під час першого запуску сервера.
+
 ## Лабораторні роботи
 
 - `lab2` — інтерактивний клієнт на React, дані з PostgreSQL

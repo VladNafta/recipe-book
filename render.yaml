@@ -1,0 +1,24 @@
+# Розгортання на Render (New -> Blueprint): база PostgreSQL і веб-сервіс
+databases:
+  - name: recipes-db
+    plan: free
+    databaseName: recipes
+    user: recipes
+
+services:
+  - type: web
+    name: recipe-book
+    runtime: node
+    plan: free
+    buildCommand: cd client && npm ci && npm run build && cd ../server && npm ci
+    startCommand: cd server && npm start
+    healthCheckPath: /api/recipes
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: recipes-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
