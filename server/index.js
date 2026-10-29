@@ -11,6 +11,7 @@ import { pool } from './db.js';
 import { initDb } from './initDb.js';
 import recipesRouter from './routes/recipes.js';
 import authRouter from './routes/auth.js';
+import aiRouter from './routes/ai.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -41,6 +42,7 @@ app.use((req, res, next) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/recipes', recipesRouter);
+app.use('/api/ai', aiRouter);
 
 // Зібраний клієнт React (npm run build): сайт і API на одній адресі
 if (fs.existsSync(CLIENT_DIR)) {

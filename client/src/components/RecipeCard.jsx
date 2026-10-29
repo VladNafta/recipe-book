@@ -1,8 +1,27 @@
 import { useState } from 'react'
+import { api } from '../api.js'
 
-// Картка рецепта; деталі розгортаються по кліку, серце додає в обрані
+const LEVEL = { 'легка': 'easy', 'середня': 'medium', 'складна': 'hard' }
+
+// Картка рецепта; деталі розгортаються по кліку, серце додає в обрані,
+// кнопка «AI-аналіз» показує оцінку рецепта від мовної моделі
 export default function RecipeCard({ recipe, isFav, onFav }) {
   const [open, setOpen] = useState(false)
+  const [analysis, setAnalysis] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function analyze() {
+    setLoading(true)
+    setError('')
+    try {
+      setAnalysis(await api('POST', `/ai/analyze/${recipe.id}`))
+    } catch (err) {
+      setError(err.error ?? 'Не вдалося отримати аналіз')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <article className="card">
@@ -17,9 +36,26 @@ export default function RecipeCard({ recipe, isFav, onFav }) {
         {recipe.cook_time <= 30 && <span className="fast">Швидко</span>}
       </p>
 
-      <button className="link" onClick={() => setOpen(!open)}>
-        {open ? 'Сховати' : 'Показати рецепт'}
-      </button>
+      <div className="card-actions">
+        <button className="link" onClick={() => setOpen(!open)}>
+          {open ? 'Сховати' : 'Показати рецепт'}
+        </button>
+        {!analysis && (
+          <button className="ai-btn" onClick={analyze} disabled={loading}>
+            {loading ? 'Аналізую…' : '✨ AI-аналіз'}
+          </button>
+        )}
+      </div>
+
+      {error && <p className="err">{error}</p>}
+      {analysis && (
+        <div className="analysis">
+          <span className={'level ' + LEVEL[analysis.difficulty]}>{analysis.difficulty}</span>
+          <span className="kcal">~{analysis.calories} ккал/порц.</span>
+          {analysis.tags.map((t) => <span key={t} className="ai-tag">#{t}</span>)}
+          <p className="tip">💡 {analysis.tip}</p>
+        </div>
+      )}
 
       {open && (
         <div className="details">

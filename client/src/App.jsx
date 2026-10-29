@@ -6,6 +6,7 @@ import AuthForm from './components/AuthForm.jsx'
 import RecipeForm from './components/RecipeForm.jsx'
 import Filters from './components/Filters.jsx'
 import RecipeList from './components/RecipeList.jsx'
+import ChatBot from './components/ChatBot.jsx'
 
 export default function App() {
   const [recipes, setRecipes] = useState([])
@@ -56,6 +57,10 @@ export default function App() {
       <Filters search={search} onSearch={setSearch} categories={categories} active={category}
         onCategory={setCategory} onlyFav={onlyFav} onOnlyFav={setOnlyFav} favCount={favorites.length} />
       <RecipeList recipes={visible} favorites={favorites} onFav={toggleFav} />
+
+      {/* рецепт, який порадив помічник, показується у списку */}
+      <ChatBot recipes={recipes}
+        onPick={(r) => { setSearch(r.title); setCategory('Усі'); setOnlyFav(false) }} />
     </div>
   )
 }
