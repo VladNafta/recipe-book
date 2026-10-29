@@ -1,0 +1,436 @@
+{
+  "info": {
+    "name": "Recipes API — безпека (ЛР4)",
+    "description": "Перевірка валідації, сесій і захисту API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Створити рецепт без входу",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/recipes",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "recipes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Тестовий рецепт\",\n  \"category\": \"Десерти\",\n  \"cook_time\": 10,\n  \"servings\": 2,\n  \"ingredients\": [\n    \"цукор\"\n  ],\n  \"steps\": \"Опис приготування тестового рецепта.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 401 — потрібен вхід\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Реєстрація з некоректними даними",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"\",\n  \"email\": \"not-an-email\",\n  \"password\": \"123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"Помилки для name, email і password\", () => {",
+              "  const fields = pm.response.json().errors.map(e => e.field);",
+              "  pm.expect(fields).to.include.members([\"name\", \"email\", \"password\"]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Вхід з неправильним паролем",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"vlad@example.com\",\n  \"password\": \"wrongpass1\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"Загальне повідомлення без підказок\", () => {",
+              "  pm.expect(pm.response.json().error).to.eql(\"Невірний email або пароль\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Вхід",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"vlad@example.com\",\n  \"password\": \"recipes2026\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Cookie сесії HttpOnly\", () => {",
+              "  const h = pm.response.headers.get(\"Set-Cookie\");",
+              "  pm.expect(h).to.include(\"connect.sid\").and.include(\"HttpOnly\");",
+              "});",
+              "pm.test(\"Хеш пароля не повертається\", () => {",
+              "  pm.expect(pm.response.json()).to.not.have.property(\"password_hash\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Поточний користувач",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 200 — сесія активна\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Рецепт з некоректними даними",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/recipes",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "recipes"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"\",\n  \"category\": \"Інше\",\n  \"cook_time\": -5,\n  \"servings\": 100,\n  \"ingredients\": [],\n  \"steps\": \"мало\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"Сервер повернув список помилок\", () => {",
+              "  pm.expect(pm.response.json().errors.length).to.be.at.least(5);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Змінити чужий рецепт",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/recipes/1",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "recipes",
+            "1"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Тестовий рецепт\",\n  \"category\": \"Десерти\",\n  \"cook_time\": 10,\n  \"servings\": 2,\n  \"ingredients\": [\n    \"цукор\"\n  ],\n  \"steps\": \"Опис приготування тестового рецепта.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 403 — немає прав\", () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Некоректний id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/recipes/abc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "recipes",
+            "abc"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Вихід",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "logout"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 204\", () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Поточний користувач після виходу",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 401 — сесію знищено\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Підбір пароля",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"vlad@example.com\",\n  \"password\": \"guess123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 401 або 429\", () => pm.expect(pm.response.code).to.be.oneOf([401, 429]));"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api"
+    }
+  ]
+}

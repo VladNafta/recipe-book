@@ -1,5 +1,5 @@
-// Пошук за назвою і кнопки категорій
-export default function Filters({ search, onSearch, categories, active, onCategory }) {
+// Пошук за назвою, кнопки категорій і перемикач «Обрані»
+export default function Filters({ search, onSearch, categories, active, onCategory, onlyFav, onOnlyFav, favCount }) {
   return (
     <div className="filters">
       <input
@@ -10,14 +10,13 @@ export default function Filters({ search, onSearch, categories, active, onCatego
       />
       <div className="categories">
         {categories.map((c) => (
-          <button
-            key={c}
-            className={c === active ? 'active' : ''}
-            onClick={() => onCategory(c)}
-          >
+          <button key={c} className={c === active ? 'active' : ''} onClick={() => onCategory(c)}>
             {c}
           </button>
         ))}
+        <button className={onlyFav ? 'active fav' : 'fav'} onClick={() => onOnlyFav(!onlyFav)}>
+          ♥ Обрані ({favCount})
+        </button>
       </div>
     </div>
   )

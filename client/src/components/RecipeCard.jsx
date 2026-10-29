@@ -1,11 +1,15 @@
 import { useState } from 'react'
 
-// Картка рецепта; деталі розгортаються по кліку
-export default function RecipeCard({ recipe }) {
+// Картка рецепта; деталі розгортаються по кліку, серце додає в обрані
+export default function RecipeCard({ recipe, isFav, onFav }) {
   const [open, setOpen] = useState(false)
 
   return (
     <article className="card">
+      <button className={isFav ? 'heart on' : 'heart'} onClick={onFav}
+        title={isFav ? 'Прибрати з обраних' : 'Додати в обрані'}>
+        {isFav ? '♥' : '♡'}
+      </button>
       <span className="tag">{recipe.category}</span>
       <h3>{recipe.title}</h3>
       <p className="meta">
